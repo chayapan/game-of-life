@@ -9,7 +9,7 @@ parser.add_argument("--grid", "-g", type=str, choices=['4x4', '16x16',  '16x32',
                     help="defind grid size. < 256x256")
 
 default_grid_size = (16,16)
-cells = {}
+cells = {} # reference to cell instances
 state = {} # track state of a cell
 
 def receive_interaction(event):
@@ -26,8 +26,32 @@ def make_cell(root, grid_row, grid_col):
     cell.grid(row=grid_row, column=grid_col, sticky=(tk.N, tk.W, tk.E, tk.S))
     cells[(grid_row, grid_col)] = cell # Set global reference
     state[(grid_row, grid_col)] = 0 # Mark dead initally
-
     return cell
+
+def  neighbors_of(grid_row, grid_col):
+    """Returns the eight neighbors and the cell."""
+    region = []
+    region.append(state[(grid_row, grid_col)]) # self
+    region.append(state[(grid_row-1, grid_col-1)])
+    region.append(state[(grid_row-1, grid_col)])
+    region.append(state[(grid_row, grid_col-1)])
+    region.append(state[(grid_row+1, grid_col+1)])
+    region.append(state[(grid_row+1, grid_col)])
+    region.append(state[(grid_row, grid_col+1)])
+    region.append(state[(grid_row+1, grid_col-1)])
+    region.append(state[(grid_row-1, grid_col+1)])
+    return region
+
+def apply_rules(grid_row, grid_col):
+    """The Conway's game of life rules:
+    1. living cell with fewer than two live neighbors die
+    2. living cell with two to three live neighbors live
+    3. living cell with more than three live neighbors die
+    4. dead cell with three live neighbors become alive
+    ."""
+    the_region = neighbors_of(grid_row, grid_col)
+    print(the_region)
+
 
 def toggle_cell(grid_row, grid_col):
     print(f"Toggle row={grid_row} col={grid_col}")
@@ -35,6 +59,7 @@ def toggle_cell(grid_row, grid_col):
     cell_state = state[(grid_row, grid_col)]
     cell = cells[(grid_row, grid_col)]
     # cell.destroy() 
+    apply_rules(grid_row, grid_col)
     if cell_state == 0:  # Dead -> Alive
         cell.create_rectangle(0,0,16,16, fill='green')
         state[(grid_row, grid_col)] = 1

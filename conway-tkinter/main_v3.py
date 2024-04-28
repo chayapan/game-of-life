@@ -6,6 +6,12 @@ before update
 calculate live status of each cell
 update state
 render
+
+Make a Cell instance. Each instance track current, previous, next state internally.?
+Don't. This add overhead. The linear state dict is already good.
+Use state and state_next is efficient.
+
+The fix is to have the rendering logic seperate from the clear action and the next action.
 """
 
 import argparse
@@ -46,12 +52,11 @@ def in_grid_range(row, col) -> bool:
         col_ok = True
     return row_ok and col_ok # True if both True
 
-def update_grid():
-    for k in cells.keys():
-        # update each cell all at once. single loop.
+def update_display():
+    # update each cell all at once. single loop.
+    for k in cells.keys():        
         cell = cells[k]
-        s0 = state[k] # if need to compare if there is change.
-        apply_rules(k[0], k[1])
+        s0 = state[k] # if need to compare to previous state if there is change.
         s1 = state_next[k]
         if s1 == 1:
             cell.create_rectangle(0,0,16,16, fill='green')
@@ -60,6 +65,14 @@ def update_grid():
             cell.create_rectangle(0,0,16,16, fill='black')
             state[k] = s1 # propagate state to next iteration
 
+def next_period():
+    c = 0
+    for k in cells.keys():   
+        apply_rules(k[0], k[1])
+        c += 1
+    print(f"Updated. cells_count={c}")
+    update_display()
+
 def clear_grid():
     c = 0
     for k in cells.keys():
@@ -67,6 +80,7 @@ def clear_grid():
         state_next[k] = 0
         c += 1
     print(f"Cleared. cells_count={c}")
+    update_display()
 
 def mark_dead(grid_row, grid_col):
     """Mark the cell dead for next state."""
@@ -116,11 +130,11 @@ def apply_rules(grid_row, grid_col, debug=True):
     
     # apply rule to current cell
     current_state = state[(grid_row, grid_col)]
-    if living_cells < 2: # to die (rule 1)
+    if living_cells < 2 and current_state == 1: # to die (rule 1)
         mark_dead(grid_row, grid_col)
-    if living_cells in [2,3]  and current_state == 1: # stay alive (rule 2)
+    if living_cells in [2,3] and current_state == 1: # stay alive (rule 2)
         mark_alive(grid_row, grid_col)
-    if living_cells > 3: # to die (rule 3)
+    if living_cells > 3 and current_state == 1: # to die (rule 3)
         mark_dead(grid_row, grid_col)
     if living_cells >= 3 and current_state == 0: # become alive (rule 4)
         mark_alive(grid_row, grid_col)
@@ -130,16 +144,13 @@ def toggle_cell(grid_row, grid_col):
     # update state 
     cell_state = state[(grid_row, grid_col)]
     cell = cells[(grid_row, grid_col)]
-    # cell.destroy() 
     if cell_state == 0:  # Dead -> Alive
         cell.create_rectangle(0,0,16,16, fill='green')
         state[(grid_row, grid_col)] = 1
-    if cell_state == 1:  # Alive -> Alive
+    if cell_state == 1:  # Alive -> Dead
         cell.create_rectangle(0,0,16,16, fill='black')
         state[(grid_row, grid_col)] = 0
-    # and so on
-    apply_rules(grid_row, grid_col) # appply after toggle ensures live count never below zero
-
+    
 def draw_initial_state(root, nrow, ncol):
     for i in range(nrow):
         for j in range(ncol):
@@ -162,7 +173,7 @@ def main(args):
     btn_frame = tk.Frame(master=window)
     btn_frame.pack()
     b1 = tk.Button(master=btn_frame, text="clear", command=clear_grid)
-    b2 = tk.Button(master=btn_frame, text="next", command=update_grid)
+    b2 = tk.Button(master=btn_frame, text="next", command=next_period)
     b1.pack(side=tk.LEFT)
     b2.pack(side=tk.LEFT)
     my_platform = window.tk.call('tk', 'windowingsystem')

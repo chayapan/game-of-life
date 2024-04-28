@@ -1,6 +1,6 @@
 """
 V3 - this version uses a strategy to update whole display at once. 
-The program enumerate the grid's cell.
+The program enumerate the grid's cell and apply the logic that update global data structure.
 
 before update
 calculate live status of each cell

@@ -108,7 +108,7 @@ def main(args):
     else:
         print(f"Grid : {default_grid_size}")
         nrow, ncol = default_grid_size
-    window = tk.Tk()
+    window = tk.Tk(title="Conway's Game of Life")
     frame1 = tk.Frame(master=window, width=100, height=100, bg="red")
     frame1.pack()
     for i in range(nrow):
